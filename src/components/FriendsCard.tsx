@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import StudentInterface from '@/components/types/StudentInterface';
+import MemberInterface from '@/components/types/MemberInterface';
 
 export default function Friends() {
     const [isLoading, setLoading] = useState(true);
-    const [friends, setFriends] = useState<StudentInterface[] | null>(null);
+    const [friends, setFriends] = useState<MemberInterface[] | null>(null);
 
     useEffect(() => {
         const getFriends = async () => {
             try {
                 const response = await fetch('api/student/exclude/' + process.env.NEXT_PUBLIC_STUDENT_ID);
                 const data = await response.json();
-                const friends: StudentInterface[] = data["data"];
+                const friends: MemberInterface[] = data["data"];
                 setFriends(friends);
                 setLoading(false);
             } catch (error) {

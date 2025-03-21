@@ -2,18 +2,18 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import FriendsComponent from '@/components/FriendsCard';
-import StudentInterface from '@/components/types/StudentInterface';
+import MemberInterface from '@/components/types/MemberInterface';
 
 export default function Home() {
     const [isLoading, setLoading] = useState(true);
-    const [student, setStudent] = useState<StudentInterface | null>(null); 
+    const [student, setStudent] = useState<MemberInterface | null>(null); 
 
     useEffect(() => {
         const getInfomation = async () => {
             try {
                 const response = await fetch('api/student/' + process.env.NEXT_PUBLIC_STUDENT_ID);
                 const data = await response.json();
-                const student: StudentInterface = data["data"];
+                const student: MemberInterface = data["data"];
                 setStudent(student);
                 setLoading(false);
             } catch (error) {

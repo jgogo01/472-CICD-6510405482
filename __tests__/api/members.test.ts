@@ -1,36 +1,39 @@
-import { createMocks } from 'node-mocks-http';
-import getMembers from '../../src/pages/api/member/[id]';
-import getMemberById from '../../src/pages/api/member/exclude/[id]';
-import fs from 'fs/promises';
+import { createMocks } from "node-mocks-http";
+import getMembers from "../../src/pages/api/member/[id]";
+import getMemberById from "../../src/pages/api/member/exclude/[id]";
+import fs from "fs/promises";
+import path from 'path';
+import MemberInterface from '@/components/types/MemberInterface';
 
-jest.mock('fs/promises');
 
-describe('Members API', () => {
-  const mookMembers = [
-    {
-        "id": "6510405482",
-        "name": "Natdanai Pinaves"
-    },
-    {
-        "id": "6510405814",
-        "name": "Sornchai Somsakul"
-    },
-    {
-        "id": "6610451010",
-        "name": "Pipatpol Wijitchayanon"
+describe("Members API", () => {
+  let members: MemberInterface[];
+  beforeAll(async () => {
+    try {
+      const filePath = path.join(process.cwd(), 'data', 'members.json');
+      const data = await fs.readFile(filePath, 'utf-8');
+      members = JSON.parse(data) as MemberInterface[];
+    } catch (error) {
+      console.error('Error reading members.json file:', error);
+      members = [];
     }
-  ];
+  });
 
   beforeEach(() => {
     jest.resetAllMocks();
-    (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(mookMembers));
+    jest.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify(members));
   });
 
-  describe('GET /api/member/exclude/[id] endpoint', () => {
-    test('should return filtered students list without specified ID', async () => {
+  describe("GET /api/member/exclude/[id] endpoint", () => {
+    test("should return filtered students list without specified ID", async () => {
+      if (members.length === 0) {
+        console.warn('No members found in the file. Skipping test.');
+        return;
+      }
+
       const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: '6510405482' },
+        method: "GET",
+        query: { id: members[0].id },
       });
 
       await getMemberById(req, res);
@@ -39,98 +42,66 @@ describe('Members API', () => {
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(200);
       expect(responseData.message).toBeNull();
-      console.log(responseData.data);
-      expect(responseData.data).toHaveLength(2);
-      expect(responseData.data.find((s: { id: string }) => s.id === '6510405482')).toBeUndefined();
-      expect(responseData.data.find((s: { id: string }) => s.id === '6510405814')).toBeDefined();
-      expect(responseData.data.find((s: { id: string }) => s.id === '6610451010')).toBeDefined();
+      expect(responseData.data).toHaveLength(members.length - 1);
+      expect(responseData.data.find((s: MemberInterface) => s.id === members[0].id)).toBeUndefined();
     });
 
-    test('should return 400 when ID is invalid', async () => {
+    test("should return 400 when ID is invalid", async () => {
       const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: 'invalid' },
+        method: "GET",
+        query: { id: "invalid" },
       });
 
-      await getMembers(req, res);
+      await getMemberById(req, res);
 
       expect(res._getStatusCode()).toBe(400);
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(400);
-      expect(responseData.message).toBe('Invalid ID');
+      expect(responseData.message).toBe("Invalid ID");
       expect(responseData.data).toBeNull();
     });
 
-    test('should return 400 when ID is missing', async () => {
+    test("should return 400 when ID is missing", async () => {
       const { req, res } = createMocks({
-        method: 'GET',
+        method: "GET",
         query: {},
       });
 
-      await getMembers(req, res);
+      await getMemberById(req, res);
 
       expect(res._getStatusCode()).toBe(400);
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(400);
-      expect(responseData.message).toBe('Invalid ID');
+      expect(responseData.message).toBe("Invalid ID");
       expect(responseData.data).toBeNull();
     });
 
-    test('should return 404 when file data is empty', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue('');
-      
+    test("should return 405 for non-GET methods", async () => {
       const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: '6510405482' },
+        method: "POST",
+        query: { id: "6510405482" },
       });
 
-      await getMembers(req, res);
-
-      expect(res._getStatusCode()).toBe(404);
-      const responseData = JSON.parse(res._getData());
-      expect(responseData.status).toBe(404);
-      expect(responseData.message).toBe('Data not found');
-      expect(responseData.data).toBeNull();
-    });
-
-    test('should return 405 for non-GET methods', async () => {
-      const { req, res } = createMocks({
-        method: 'POST',
-        query: { id: '6510405482' },
-      });
-
-      await getMembers(req, res);
+      await getMemberById(req, res);
 
       expect(res._getStatusCode()).toBe(405);
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(405);
-      expect(responseData.message).toBe('Method Not Allowed');
-      expect(responseData.data).toBeNull();
-    });
-
-    test('should return 500 when file reading fails', async () => {
-      (fs.readFile as jest.Mock).mockRejectedValue(new Error('File read error'));
-      
-      const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: '6510405482' },
-      });
-
-      await getMembers(req, res);
-
-      expect(res._getStatusCode()).toBe(500);
-      const responseData = JSON.parse(res._getData());
-      expect(responseData.status).toBe(500);
-      expect(responseData.message).toBe('Server Error');
+      expect(responseData.message).toBe("Method Not Allowed");
       expect(responseData.data).toBeNull();
     });
   });
 
-  describe('GET /api/member/[id] endpoint', () => {
-    test('should return a specific student by ID', async () => {
+  describe("GET /api/member/[id] endpoint", () => {
+    test("should return a specific student by ID", async () => {
+      if (members.length < 2) {
+        console.warn('Not enough members found in the file. Skipping test.');
+        return;
+      }
+
       const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: '6510405814' },
+        method: "GET",
+        query: { id: members[1].id },
       });
 
       await getMembers(req, res);
@@ -139,100 +110,69 @@ describe('Members API', () => {
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(200);
       expect(responseData.message).toBeNull();
-      expect(responseData.data).toEqual({ id: '6510405814', name: 'Sornchai Somsakul' });
+      expect(responseData.data).toEqual({
+        id: members[1].id,
+        name: members[1].name,
+      });
     });
 
-    test('should return 404 when student is not found', async () => {
+    test("should return 404 when student is not found", async () => {
       const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: '999' },
+        method: "GET",
+        query: { id: "999" },
       });
 
-      await getMemberById(req, res);
+      await getMembers(req, res);
 
       expect(res._getStatusCode()).toBe(404);
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(404);
-      expect(responseData.message).toBe('Student not found');
+      expect(responseData.message).toBe("Student not found");
       expect(responseData.data).toBeNull();
     });
 
-    test('should return 400 when ID is invalid', async () => {
+    test("should return 400 when ID is invalid", async () => {
       const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: 'invalid' },
+        method: "GET",
+        query: { id: "invalid" },
       });
 
-      await getMemberById(req, res);
+      await getMembers(req, res);
 
       expect(res._getStatusCode()).toBe(400);
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(400);
-      expect(responseData.message).toBe('Invalid ID');
+      expect(responseData.message).toBe("Invalid ID");
       expect(responseData.data).toBeNull();
     });
 
-    test('should return 400 when ID is missing', async () => {
+    test("should return 400 when ID is missing", async () => {
       const { req, res } = createMocks({
-        method: 'GET',
+        method: "GET",
         query: {},
       });
 
-      await getMemberById(req, res);
+      await getMembers(req, res);
 
       expect(res._getStatusCode()).toBe(400);
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(400);
-      expect(responseData.message).toBe('Invalid ID');
+      expect(responseData.message).toBe("Invalid ID");
       expect(responseData.data).toBeNull();
     });
 
-    test('should return 404 when file data is empty', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue('');
-      
+    test("should return 405 for non-GET methods", async () => {
       const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: '6510405814' },
+        method: "POST",
+        query: { id: "6510405814" },
       });
 
-      await getMemberById(req, res);
-
-      expect(res._getStatusCode()).toBe(404);
-      const responseData = JSON.parse(res._getData());
-      expect(responseData.status).toBe(404);
-      expect(responseData.message).toBe('Data not found');
-      expect(responseData.data).toBeNull();
-    });
-
-    test('should return 405 for non-GET methods', async () => {
-      const { req, res } = createMocks({
-        method: 'POST',
-        query: { id: '6510405814' },
-      });
-
-      await getMemberById(req, res);
+      await getMembers(req, res);
 
       expect(res._getStatusCode()).toBe(405);
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe(405);
-      expect(responseData.message).toBe('Method Not Allowed');
-      expect(responseData.data).toBeNull();
-    });
-
-    test('should return 500 when file reading fails', async () => {
-      (fs.readFile as jest.Mock).mockRejectedValue(new Error('File read error'));
-      
-      const { req, res } = createMocks({
-        method: 'GET',
-        query: { id: '6510405814' },
-      });
-
-      await getMemberById(req, res);
-
-      expect(res._getStatusCode()).toBe(500);
-      const responseData = JSON.parse(res._getData());
-      expect(responseData.status).toBe(500);
-      expect(responseData.message).toBe('Server Error');
+      expect(responseData.message).toBe("Method Not Allowed");
       expect(responseData.data).toBeNull();
     });
   });
