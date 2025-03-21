@@ -11,7 +11,7 @@ export default function Home() {
     useEffect(() => {
         const getInfomation = async () => {
             try {
-                const response = await fetch('api/student/' + process.env.NEXT_PUBLIC_STUDENT_ID);
+                const response = await fetch('api/member/' + process.env.NEXT_PUBLIC_STUDENT_ID);
                 const data = await response.json();
                 const student: MemberInterface = data["data"];
                 setStudent(student);
