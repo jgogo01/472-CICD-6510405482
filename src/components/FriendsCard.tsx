@@ -8,7 +8,7 @@ export default function Friends() {
     useEffect(() => {
         const getFriends = async () => {
             try {
-                const response = await fetch(process.env.NEXT_PUBLIC_API + '/student/exclude/' + process.env.NEXT_PUBLIC_STUDENT_ID);
+                const response = await fetch('api/student/exclude/' + process.env.NEXT_PUBLIC_STUDENT_ID);
                 const data = await response.json();
                 const friends: StudentInterface[] = data["data"];
                 setFriends(friends);
