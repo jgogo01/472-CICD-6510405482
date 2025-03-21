@@ -2,35 +2,48 @@ import { createMocks } from "node-mocks-http";
 import getMembers from "../../src/pages/api/member/[id]";
 import getMemberById from "../../src/pages/api/member/exclude/[id]";
 import fs from "fs/promises";
-import path from 'path';
-import MemberInterface from '@/components/types/MemberInterface';
-
+import path from "path";
+import MemberInterface from "@/components/types/MemberInterface";
 
 describe("Members API", () => {
   let members: MemberInterface[];
   beforeAll(async () => {
     try {
-      const filePath = path.join(process.cwd(), 'data', 'members.json');
-      const data = await fs.readFile(filePath, 'utf-8');
+      const filePath = path.join(process.cwd(), "data", "members.json");
+      const data = await fs.readFile(filePath, "utf-8");
       members = JSON.parse(data) as MemberInterface[];
+      if (!Array.isArray(members)) {
+        throw new Error("Invalid data format");
+      }
+      if (
+        members.some(
+          (s) => typeof s.id !== "string" || typeof s.name !== "string"
+        )
+      ) {
+        throw new Error("Invalid data format");
+      }
+      if (members.length < 2) {
+        throw new Error("Not enough members to run tests");
+      }
     } catch (error) {
-      console.error('Error reading members.json file:', error);
-      members = [];
+      if (error instanceof Error) {
+        throw new Error(`Error reading data: ${error.message}`);
+      } else {
+        throw new Error("An unknown error occurred");
+      }
     }
   });
 
   beforeEach(() => {
+    if (members.length < 2) {
+      fail("Not enough data for the test");
+    }
     jest.resetAllMocks();
-    jest.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify(members));
+    jest.spyOn(fs, "readFile").mockResolvedValue(JSON.stringify(members));
   });
 
   describe("GET /api/member/exclude/[id] endpoint", () => {
     test("should return filtered students list without specified ID", async () => {
-      if (members.length === 0) {
-        console.warn('No members found in the file. Skipping test.');
-        return;
-      }
-
       const { req, res } = createMocks({
         method: "GET",
         query: { id: members[0].id },
@@ -43,7 +56,9 @@ describe("Members API", () => {
       expect(responseData.status).toBe(200);
       expect(responseData.message).toBeNull();
       expect(responseData.data).toHaveLength(members.length - 1);
-      expect(responseData.data.find((s: MemberInterface) => s.id === members[0].id)).toBeUndefined();
+      expect(
+        responseData.data.find((s: MemberInterface) => s.id === members[0].id)
+      ).toBeUndefined();
     });
 
     test("should return 400 when ID is invalid", async () => {
@@ -94,11 +109,6 @@ describe("Members API", () => {
 
   describe("GET /api/member/[id] endpoint", () => {
     test("should return a specific student by ID", async () => {
-      if (members.length < 2) {
-        console.warn('Not enough members found in the file. Skipping test.');
-        return;
-      }
-
       const { req, res } = createMocks({
         method: "GET",
         query: { id: members[1].id },
