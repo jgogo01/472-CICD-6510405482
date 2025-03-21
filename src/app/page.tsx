@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import FriendsComponent from '@/components/FriendsCard';
-import MemberInterface from '../interface/MemberInterface';
+import MemberInterface from '@/interface/MemberInterface';
 
 export default function Home() {
     const [isLoading, setLoading] = useState(true);
