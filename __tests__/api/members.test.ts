@@ -3,7 +3,7 @@ import getMembers from "../../src/pages/api/member/[id]";
 import getMemberById from "../../src/pages/api/member/exclude/[id]";
 import fs from "fs/promises";
 import path from "path";
-import MemberInterface from "@/components/types/MemberInterface";
+import MemberInterface from "../../src/interface/MemberInterface";
 
 describe("Members API", () => {
   let members: MemberInterface[];

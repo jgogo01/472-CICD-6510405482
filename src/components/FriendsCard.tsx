@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import MemberInterface from '@/components/types/MemberInterface';
+import MemberInterface from '../interface/MemberInterface';
 
 export default function Friends() {
     const [isLoading, setLoading] = useState(true);

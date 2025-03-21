@@ -2,10 +2,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import fs from "fs/promises";
 import path from "path";
+import ApiResponseInterface from "@/interface/ApiResponseInterface";
 
 const filePath = path.join(process.cwd(), "data/members.json");
 
-const createResponse = (status: number, message: string | null, data: any) => ({
+const createResponse = <T>(status: number, message: string | null, data: T): ApiResponseInterface<T> => ({
   status,
   message,
   data,
