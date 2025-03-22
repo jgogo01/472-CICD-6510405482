@@ -46,7 +46,7 @@ jobs:
           echo "Triggering Portainer API to rebuild stack and pull latest image..."
 
           # Pull the latest image and rebuild stack by updating the stack
-          curl -X POST "$PORTAINER_URL/api/endpoints/1/docker/stacks/$STACK_ID/redeploy" \
+          curl -X POST "$PORTAINER_URL/api/endpoints/3/docker/stacks/$STACK_ID/redeploy" \
             -H "Authorization: Bearer $PORTAINER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
