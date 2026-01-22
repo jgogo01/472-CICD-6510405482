@@ -1,0 +1,11 @@
+kind: Service
+metadata:
+  name: cicd-472-sv
+spec:
+  selector:
+    app: 472-cicd
+  ports:
+    - protocol: TCP
+      port: 33000      # Port accessible outside the cluster
+      targetPort: 3000 # Port inside the container
+  type: NodePort       # Best type for Minikube local testing

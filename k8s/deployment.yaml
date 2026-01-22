@@ -1,0 +1,22 @@
+kind: Deployment
+metadata:
+  name: 472-cicd
+  labels:
+    app: 472-cicd
+spec:
+  replicas: 2 # Runs two instances for high availability
+  selector:
+    matchLabels:
+      app: 472-cicd
+  template:
+    metadata:
+      labels:
+        app: 472-cicd
+    spec:
+      containers:
+      - name: 472-cicd
+        # Use your Docker Hub image
+        image: ${{ secrets.DOCKER_USERNAME }}/472-cicd:latest 
+        ports:
+        - containerPort: 3000 # Standard port for Next.js/Node apps
+        imagePullPolicy: Always # Ensures Minikube pulls the 'latest' every time
